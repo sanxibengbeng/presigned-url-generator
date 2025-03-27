@@ -1,10 +1,12 @@
 # Lambda S3 Presigned URL Generator
 
+<div align="right">
+  <a href="./README_CN.md">中文文档</a>
+</div>
+
 This project creates a serverless service using AWS Lambda and API Gateway to generate presigned URLs for S3 objects with a 2-hour validity period. The project can be deployed in both AWS global regions and AWS China regions.
 
 ![Architecture Diagram](./docs/images/arch.en.drawio.png)
-
-[中文文档](./README_CN.md)
 
 ## Architecture Overview
 
@@ -37,35 +39,45 @@ npm install
 cd lambda && npm install && cd ..
 
 # Bootstrap CDK (first time only)
-cdk bootstrap aws://ACCOUNT-NUMBER/REGION
+cdk bootstrap
 
-# Deploy the stack
-# For global regions
-CDK_DEFAULT_REGION=us-east-1 cdk deploy
+# Deploy the stack (uses AWS CLI default region)
+cdk deploy
 
-# For China regions
-CDK_DEFAULT_REGION=cn-north-1 cdk deploy
+# Or specify a region explicitly
+cdk deploy --region us-east-1  # For global regions
+cdk deploy --region cn-north-1  # For China regions
 ```
 
 ## Deployment Options
 
-The application is designed to be region-agnostic and will use the region specified in your environment variables:
+The application is designed to be region-agnostic and will use the region specified in your AWS configuration:
 
-- For AWS CLI: Set the region in your AWS CLI configuration or use the `--region` parameter
-- For CDK deployment: Use the `CDK_DEFAULT_REGION` environment variable
-- For Lambda runtime: The Lambda function will automatically use the region from the execution environment
+- **Default method**: Uses the region from your AWS CLI configuration
+  ```bash
+  # Check your current default region
+  aws configure get region
+  
+  # Deploy using default region
+  cdk deploy
+  ```
 
-### Global Region Deployment (e.g., us-east-1)
+- **Specify region with parameter**: Override the default region
+  ```bash
+  cdk deploy --region us-east-1
+  ```
 
-```bash
-CDK_DEFAULT_REGION=us-east-1 cdk deploy
-```
+- **Using environment variables**: Set region via environment variables
+  ```bash
+  AWS_REGION=us-east-1 cdk deploy
+  # or
+  CDK_DEFAULT_REGION=us-east-1 cdk deploy
+  ```
 
-### China Region Deployment (cn-north-1 or cn-northwest-1)
-
-```bash
-CDK_DEFAULT_REGION=cn-north-1 cdk deploy
-```
+- **Using AWS profiles**: If you have multiple AWS profiles configured
+  ```bash
+  cdk deploy --profile your-profile-name
+  ```
 
 ## Usage
 
@@ -90,5 +102,36 @@ https://your-api-id.execute-api.[region].amazonaws.com.cn/prod/generate-url?buck
   "key": "your-object-key"
 }
 ```
+## Testing Examples
 
-For more detailed information, please refer to the [Chinese documentation](./README_CN.md).
+Here are examples of testing the API using curl:
+
+```bash
+# Generate a presigned URL
+curl "https://your-api-id.execute-api.[region].amazonaws.com/prod/generate-url?key=example.txt"
+
+# Access the object using the generated presigned URL
+curl -s "$(curl -s "https://your-api-id.execute-api.[region].amazonaws.com/prod/generate-url?key=example.txt" | jq -r '.presignedUrl')"
+```
+
+## Customization
+
+You can customize this project by modifying the following files:
+
+- `lambda/index.js`: Modify the Lambda function logic
+- `lib/lambda-gen-s3-stack.ts`: Modify the CDK infrastructure definition
+
+## Cleanup
+
+To delete the deployed resources, run:
+
+```bash
+cdk destroy
+```
+
+## Notes
+
+1. Ensure your IAM user/role has sufficient permissions to deploy this stack
+2. AWS services in China regions may have some special configuration requirements; refer to AWS China region documentation if you encounter issues
+3. The presigned URL validity period is 2 hours, which can be adjusted by modifying the `expiresIn` parameter in `lambda/index.js`
+4. Ensure the target S3 bucket exists and the Lambda function has permission to access it

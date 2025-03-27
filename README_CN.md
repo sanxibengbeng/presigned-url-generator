@@ -1,10 +1,12 @@
 # Lambda S3 预签名URL生成器
 
+<div align="right">
+  <a href="./README.md">English</a>
+</div>
+
 这个项目使用AWS Lambda和API Gateway创建一个无服务器服务，用于生成S3对象的预签名URL，有效期为2小时。该项目可部署在AWS全球区域和中国区域。
 
 ![架构图](./docs/images/arch.drawio.png)
-
-[English Documentation](./README.md)
 
 ## 架构概述
 
@@ -37,35 +39,45 @@ npm install
 cd lambda && npm install && cd ..
 
 # 引导CDK（仅首次使用）
-cdk bootstrap aws://ACCOUNT-NUMBER/REGION
+cdk bootstrap
 
-# 部署堆栈
-# 全球区域
-CDK_DEFAULT_REGION=us-east-1 cdk deploy
+# 部署堆栈（使用AWS CLI默认区域）
+cdk deploy
 
-# 中国区域
-CDK_DEFAULT_REGION=cn-north-1 cdk deploy
+# 或者明确指定区域
+cdk deploy --region us-east-1  # 全球区域
+cdk deploy --region cn-north-1  # 中国区域
 ```
 
 ## 部署选项
 
-该应用程序设计为区域无关的，将使用您环境变量中指定的区域：
+该应用程序设计为区域无关的，将使用您AWS配置中指定的区域：
 
-- AWS CLI：在AWS CLI配置中设置区域或使用`--region`参数
-- CDK部署：使用`CDK_DEFAULT_REGION`环境变量
-- Lambda运行时：Lambda函数将自动使用执行环境中的区域
+- **默认方法**：使用AWS CLI配置中的区域
+  ```bash
+  # 检查当前默认区域
+  aws configure get region
+  
+  # 使用默认区域部署
+  cdk deploy
+  ```
 
-### 全球区域部署（如us-east-1）
+- **使用参数指定区域**：覆盖默认区域
+  ```bash
+  cdk deploy --region us-east-1
+  ```
 
-```bash
-CDK_DEFAULT_REGION=us-east-1 cdk deploy
-```
+- **使用环境变量**：通过环境变量设置区域
+  ```bash
+  AWS_REGION=us-east-1 cdk deploy
+  # 或
+  CDK_DEFAULT_REGION=us-east-1 cdk deploy
+  ```
 
-### 中国区域部署（cn-north-1或cn-northwest-1）
-
-```bash
-CDK_DEFAULT_REGION=cn-north-1 cdk deploy
-```
+- **使用AWS配置文件**：如果您配置了多个AWS配置文件
+  ```bash
+  cdk deploy --profile your-profile-name
+  ```
 
 ## 使用方法
 
@@ -80,11 +92,6 @@ https://your-api-id.execute-api.[region].amazonaws.com/prod/generate-url?bucket=
 https://your-api-id.execute-api.[region].amazonaws.com.cn/prod/generate-url?bucket=your-bucket-name&key=your-object-key
 ```
 
-### 请求参数
-
-- `bucket`: S3桶的名称（如果在Lambda环境变量中设置了DEFAULT_BUCKET，则此参数可选）
-- `key`: S3对象的键（路径）（必需）
-
 ### 响应示例
 
 ```json
@@ -95,7 +102,6 @@ https://your-api-id.execute-api.[region].amazonaws.com.cn/prod/generate-url?buck
   "key": "your-object-key"
 }
 ```
-
 ## 测试示例
 
 以下是使用curl测试API的示例：
