@@ -13,7 +13,7 @@ const s3Client = new S3Client({
  * @param {number} expiresIn - URL expiration time (seconds)
  * @returns {Promise<string>} Presigned URL
  */
-const generatePresignedUrl = async (bucket, key, expiresIn = 7200) => { // Default 2 hours (7200 seconds)
+const generatePresignedUrl = async (bucket, key, expiresIn = 604800) => { // Default 7 days (604800 seconds)
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -58,7 +58,7 @@ exports.handler = async (event) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         presignedUrl: url,
-        expiresIn: '2 hours',
+        expiresIn: '7 days',
         bucket,
         key
       })
