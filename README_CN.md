@@ -2,7 +2,9 @@
 
 这个项目使用AWS Lambda和API Gateway创建一个无服务器服务，用于生成S3对象的预签名URL，有效期为2小时。该项目可部署在AWS全球区域和中国区域。
 
-![架构图](./images/arch.drawio.png)
+![架构图](./docs/images/arch.drawio.png)
+
+[English Documentation](./README.md)
 
 ## 架构概述
 
@@ -27,93 +29,43 @@
 - AWS CLI 已配置，具有适当的区域凭证
 - AWS CDK 已安装 (`npm install -g aws-cdk`)
 
+## 快速开始
+
+```bash
+# 安装依赖
+npm install
+cd lambda && npm install && cd ..
+
+# 引导CDK（仅首次使用）
+cdk bootstrap aws://ACCOUNT-NUMBER/REGION
+
+# 部署堆栈
+# 全球区域
+CDK_DEFAULT_REGION=us-east-1 cdk deploy
+
+# 中国区域
+CDK_DEFAULT_REGION=cn-north-1 cdk deploy
+```
+
 ## 部署选项
+
+该应用程序设计为区域无关的，将使用您环境变量中指定的区域：
+
+- AWS CLI：在AWS CLI配置中设置区域或使用`--region`参数
+- CDK部署：使用`CDK_DEFAULT_REGION`环境变量
+- Lambda运行时：Lambda函数将自动使用执行环境中的区域
 
 ### 全球区域部署（如us-east-1）
 
-1. 修改`bin/lambda-gen-s3.ts`文件，设置区域为全球区域：
-
-```typescript
-const app = new cdk.App();
-new LambdaGenS3Stack(app, 'LambdaGenS3Stack', {
-  env: { 
-    account: process.env.CDK_DEFAULT_ACCOUNT, 
-    region: 'us-east-1'  // 设置为所需的全球区域
-  },
-  description: '用于生成S3预签名URL的Lambda和API Gateway',
-});
-```
-
-2. 修改`lambda/index.js`文件中的区域设置：
-
-```javascript
-// 使用全球区域的S3客户端
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1', // 使用全球区域
-});
-```
-
-3. 如果需要设置默认桶，可以在`lib/lambda-gen-s3-stack.ts`中配置环境变量：
-
-```typescript
-environment: {
-  // 设置默认的桶名称
-  DEFAULT_BUCKET: 'your-bucket-name',
-},
+```bash
+CDK_DEFAULT_REGION=us-east-1 cdk deploy
 ```
 
 ### 中国区域部署（cn-north-1或cn-northwest-1）
 
-1. 修改`bin/lambda-gen-s3.ts`文件，设置区域为中国区域：
-
-```typescript
-const app = new cdk.App();
-new LambdaGenS3Stack(app, 'LambdaGenS3Stack', {
-  env: { 
-    account: process.env.CDK_DEFAULT_ACCOUNT, 
-    region: 'cn-north-1'  // 或 'cn-northwest-1'
-  },
-  description: '用于生成S3预签名URL的Lambda和API Gateway',
-});
-```
-
-2. 修改`lambda/index.js`文件中的区域设置：
-
-```javascript
-// 中国区域的S3客户端
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'cn-north-1', // 或 'cn-northwest-1'
-});
-```
-
-## 部署步骤
-
-1. 克隆此仓库
-2. 安装依赖：
-
 ```bash
-# 安装主项目依赖
-npm install
-
-# 安装Lambda函数依赖
-cd lambda
-npm install
-cd ..
+CDK_DEFAULT_REGION=cn-north-1 cdk deploy
 ```
-
-3. 引导CDK（如果这是您第一次在此AWS账户/区域中使用CDK）：
-
-```bash
-cdk bootstrap aws://ACCOUNT-NUMBER/REGION
-```
-
-4. 部署堆栈：
-
-```bash
-cdk deploy
-```
-
-5. 部署完成后，您将获得一个API Gateway URL，可以用于生成预签名URL。
 
 ## 使用方法
 

@@ -1,76 +1,76 @@
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
-// 中国区域的S3客户端
+// Create S3 client using only environment variables
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'cn-north-1', // 默认使用北京区域，也可以设置为'cn-northwest-1'宁夏区域
+  region: process.env.AWS_REGION, // Use the Lambda execution environment's region
 });
 
 /**
- * 生成S3对象的预签名URL
- * @param {string} bucket - S3桶名称
- * @param {string} key - S3对象键
- * @param {number} expiresIn - URL有效期（秒）
- * @returns {Promise<string>} 预签名URL
+ * Generate presigned URL for S3 object
+ * @param {string} bucket - S3 bucket name
+ * @param {string} key - S3 object key
+ * @param {number} expiresIn - URL expiration time (seconds)
+ * @returns {Promise<string>} Presigned URL
  */
-const generatePresignedUrl = async (bucket, key, expiresIn = 7200) => { // 默认2小时(7200秒)
+const generatePresignedUrl = async (bucket, key, expiresIn = 7200) => { // Default 2 hours (7200 seconds)
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
   });
 
   try {
-    // 生成预签名URL
+    // Generate presigned URL
     const url = await getSignedUrl(s3Client, command, { expiresIn });
     return url;
   } catch (error) {
-    console.error('生成预签名URL时出错:', error);
+    console.error('Error generating presigned URL:', error);
     throw error;
   }
 };
 
 /**
- * Lambda处理函数
+ * Lambda handler function
  */
 exports.handler = async (event) => {
-  console.log('接收到的事件:', JSON.stringify(event, null, 2));
+  console.log('Received event:', JSON.stringify(event, null, 2));
   
   try {
-    // 从事件中获取参数，或使用查询字符串参数
+    // Get parameters from event or query string parameters
     const bucket = event.bucket || (event.queryStringParameters && event.queryStringParameters.bucket) || process.env.DEFAULT_BUCKET;
     const key = event.key || (event.queryStringParameters && event.queryStringParameters.key);
     
-    // 验证必要参数
+    // Validate required parameters
     if (!bucket || !key) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: '缺少必要参数: bucket 和 key 是必需的' })
+        body: JSON.stringify({ error: 'Missing required parameters: bucket and key are required' })
       };
     }
     
-    // 生成预签名URL
+    // Generate presigned URL
     const url = await generatePresignedUrl(bucket, key);
     
-    // 返回成功响应
+    // Return successful response
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         presignedUrl: url,
-        expiresIn: '2小时',
+        expiresIn: '2 hours',
         bucket,
         key
       })
     };
   } catch (error) {
-    console.error('处理请求时出错:', error);
+    console.error('Error processing request:', error);
     
-    // 返回错误响应
+    // Return error response
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: '生成预签名URL时发生错误', message: error.message })
+      body: JSON.stringify({ error: 'Error generating presigned URL', message: error.message })
     };
   }
 };
